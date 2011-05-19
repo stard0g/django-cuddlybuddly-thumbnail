@@ -17,6 +17,10 @@ from django.utils.hashcompat import md5_constructor
 from cuddlybuddly.thumbnail import get_processor
 from cuddlybuddly.thumbnail.exceptions import ThumbnailException
 
+from PIL import Image
+from urlparse import urlparse
+import urllib, urllib2
+
 
 def build_thumbnail_name(source, width, height, processor):
     source = force_unicode(source)
@@ -69,6 +73,7 @@ class Thumbnail(object):
                     self.source.seek(0)
                 else:
                     source = smart_str(force_unicode(self.source))
+
                 source = os.path.join(self.cache_dir,
                                       md5_constructor(source).hexdigest())
                 if not os.path.exists(source):
@@ -121,6 +126,27 @@ class Thumbnail(object):
                             os.remove(dest)
                     raise
 
+    def get_remote_image(self, url):
+        # try:
+        url = str(url)
+        filename = url.split('/')
+        filename = str(filename[-1])
+
+        self.dest = build_thumbnail_name(filename, self.width, self.height, self.processor)
+
+        fname = '%sremote/%s' % (settings.MEDIA_ROOT, filename)
+
+        if not os.path.isfile(fname):
+            try:
+                urllib.urlretrieve( url, fname )
+                default_storage.save(fname, ContentFile(fname))
+            except Exception, e:
+                raise ThumbnailException('Could not download: %s and store at: %s'
+                                         % (url, fname))
+
+        return force_unicode(fname)
+
+
     def _do_generate(self):
         if isinstance(self.source, Image.Image):
             data = self.source
@@ -130,8 +156,13 @@ class Thumbnail(object):
                     if not hasattr(self.source, 'read'):
                         source = force_unicode(self.source)
                         if not default_storage.exists(source):
-                            raise ThumbnailException('Source does not exist: %s'
-                                                     % self.source)
+                            # test source for being a url
+                            url = urlparse(source)
+                            if url.scheme is not None:
+                                source = self.get_remote_image(source)
+                            else:
+                                raise ThumbnailException('Source does not exist: %s'
+                                                         % self.source)
                         file = default_storage.open(source, 'rb')
                         content = ContentFile(file.read())
                         file.close()
