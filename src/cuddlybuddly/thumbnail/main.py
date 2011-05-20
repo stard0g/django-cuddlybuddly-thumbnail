@@ -11,7 +11,7 @@ except ImportError:
 from django.conf import settings
 from django.core.files.base import ContentFile, File
 from django.core.files.storage import default_storage
-from django.db.models.fields.files import FieldFile, ImageFile
+from django.db.models.fields.files import FieldFile
 from django.utils.encoding import force_unicode, smart_str
 from django.utils.hashcompat import md5_constructor
 from django.template.defaultfilters import slugify
@@ -24,6 +24,8 @@ import urllib, urllib2
 
 import logging
 logger = logging.getLogger(__name__)
+
+CUDDLYBUDDLY_NOIMAGE_IMAGE = getattr(settings, 'CUDDLYBUDDLY_NOIMAGE_IMAGE', 'no-image.jpg')
 
 
 def build_thumbnail_name(source, width, height, processor):
