@@ -11,15 +11,19 @@ except ImportError:
 from django.conf import settings
 from django.core.files.base import ContentFile, File
 from django.core.files.storage import default_storage
-from django.db.models.fields.files import FieldFile
+from django.db.models.fields.files import FieldFile, ImageFile
 from django.utils.encoding import force_unicode, smart_str
 from django.utils.hashcompat import md5_constructor
+from django.template.defaultfilters import slugify
 from cuddlybuddly.thumbnail import get_processor
 from cuddlybuddly.thumbnail.exceptions import ThumbnailException
 
 from PIL import Image
 from urlparse import urlparse
 import urllib, urllib2
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def build_thumbnail_name(source, width, height, processor):
@@ -127,25 +131,32 @@ class Thumbnail(object):
                     raise
 
     def get_remote_image(self, url):
-        # try:
-        url = str(url)
-        filename = url.split('/')
-        filename = str(filename[-1])
-
+        """ build the unique filename and then check if it has been created already
+        if not then download it from the remote url and save it locally
+        """
+        filename = self.get_remote_filename(url)
         self.dest = build_thumbnail_name(filename, self.width, self.height, self.processor)
 
-        fname = '%sremote/%s' % (settings.MEDIA_ROOT, filename)
+        file_name = '%s_remote/%s' % (settings.MEDIA_ROOT, filename)
 
-        if not os.path.isfile(fname):
+        if not default_storage.exists(file_name):
             try:
-                urllib.urlretrieve( url, fname )
-                default_storage.save(fname, ContentFile(fname))
+                urllib.urlretrieve( url, file_name )
             except Exception, e:
                 raise ThumbnailException('Could not download: %s and store at: %s'
-                                         % (url, fname))
+                                         % (url, file_name))
 
-        return force_unicode(fname)
+        logger.debug('returning remote_get file_name: %s' % (file_name,))
+        return force_unicode(file_name)
 
+    def get_remote_filename(self, url):
+        """ Convert the remote filename into a local unique name
+        md5_ the whole url and prefix it to the remote filename
+        """
+        logger.debug('get remote_filename')
+        url = str(url)
+        filename = url.split('/')
+        return '%s-%s' % (md5_constructor(url).hexdigest(), str(filename[-1]))
 
     def _do_generate(self):
         if isinstance(self.source, Image.Image):
