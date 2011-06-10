@@ -144,9 +144,10 @@ class Thumbnail(object):
         if not default_storage.exists(file_name):
             try:
                 urllib.urlretrieve( url, file_name )
+                Image.open(file_name)
             except Exception, e:
-                raise ThumbnailException('Could not download: %s and store at: %s'
-                                         % (url, file_name))
+                logger.error('Could not download: %s and store at: %s' % (url, file_name))
+                file_name = CUDDLYBUDDLY_NOIMAGE_IMAGE
 
         logger.debug('returning remote_get file_name: %s' % (file_name,))
         return force_unicode(file_name)
@@ -174,9 +175,16 @@ class Thumbnail(object):
                             if url.scheme is not None:
                                 source = self.get_remote_image(source)
                             else:
-                                raise ThumbnailException('Source does not exist: %s'
-                                                         % self.source)
-                        file = default_storage.open(source, 'rb')
+                                # raise ThumbnailException('Source does not exist: %s'
+                                #                                                          % self.source)
+                                logger.debug('Source does not exist: %s' % (source,))
+                                source = CUDDLYBUDDLY_NOIMAGE_IMAGE
+
+                        try:
+                            file = default_storage.open(source, 'rb')
+                        except:
+                            file = default_storage.open(CUDDLYBUDDLY_NOIMAGE_IMAGE, 'rb')
+
                         content = ContentFile(file.read())
                         file.close()
                     else:
