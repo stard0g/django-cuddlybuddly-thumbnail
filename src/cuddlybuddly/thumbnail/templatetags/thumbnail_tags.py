@@ -45,16 +45,21 @@ class ThumbnailNode(template.Node):
             args.append(None)
         for arg in self.extra_args:
             args.append(arg.resolve(context))
+
         kwargs = dict(
             [(k, v.resolve(context)) for k, v in self.extra_kwargs.items()]
         )
-        try:
-            thumb = Thumbnail(*args, **kwargs)
-        except:
-            thumb = ''
-        else:
-            thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
-            thumb = iri_to_uri('/'.join(thumb.strip('\\/').split(os.sep)))
+
+#       try:
+        thumb = Thumbnail(*args, **kwargs)
+#       except:
+#           thumb = ''
+#       else:
+#           thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
+
+        thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
+        thumb = iri_to_uri('/'.join(thumb.strip('\\/').split(os.sep)))
+
         if self.as_var:
             context[self.as_var] = thumb
             return ''
@@ -80,7 +85,6 @@ def do_thumbnail(parser, token):
 
     Source and destination can be a file like object or a path as a string.
     """
-
     split_token = token.split_contents()
     args = []
     kwargs = {}
