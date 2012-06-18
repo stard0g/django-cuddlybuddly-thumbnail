@@ -5,6 +5,7 @@ from django.template.defaulttags import kwarg_re
 from django.utils.encoding import force_unicode, iri_to_uri
 from cuddlybuddly.thumbnail.main import Thumbnail
 
+logger = logging.getLogger()
 
 register = template.Library()
 
@@ -50,15 +51,13 @@ class ThumbnailNode(template.Node):
             [(k, v.resolve(context)) for k, v in self.extra_kwargs.items()]
         )
 
-#       try:
-        thumb = Thumbnail(*args, **kwargs)
-#       except:
-#           thumb = ''
-#       else:
-#           thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
-
-        thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
-        thumb = iri_to_uri('/'.join(thumb.strip('\\/').split(os.sep)))
+        try:
+            thumb = Thumbnail(*args, **kwargs)
+            thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
+            thumb = iri_to_uri('/'.join(thumb.strip('\\/').split(os.sep)))
+        except:
+            logger.exception('Could not convert image "%s" to thumbnail'%(kwargs['source_image'],))
+            thumb = ''
 
         if self.as_var:
             context[self.as_var] = thumb
