@@ -4,7 +4,7 @@ from django.conf import settings
 from django.template.defaulttags import kwarg_re
 from django.utils.encoding import force_unicode, iri_to_uri
 from cuddlybuddly.thumbnail.main import Thumbnail
-
+import logging
 logger = logging.getLogger()
 
 register = template.Library()
