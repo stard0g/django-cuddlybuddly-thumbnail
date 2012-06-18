@@ -56,7 +56,7 @@ class ThumbnailNode(template.Node):
             thumb = force_unicode(thumb).replace(settings.MEDIA_ROOT, '')
             thumb = iri_to_uri('/'.join(thumb.strip('\\/').split(os.sep)))
         except:
-            logger.exception('Could not convert image "%s" to thumbnail'%(kwargs['source_image'],))
+            logger.exception('Could not convert image "%s" to thumbnail'%(args[0],))
             thumb = ''
 
         if self.as_var:
